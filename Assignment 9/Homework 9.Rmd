@@ -1,0 +1,91 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(dplyr)
+set.seed(911)
+```
+
+```{r}
+#Part 1
+  
+  #1
+  network <- read.csv("network.csv")
+  attributes <- read.csv("attributes.csv")
+  
+  #2
+  SI_contagion_model <- function(network, initially_infected, p, time_steps) {
+    for (h in 1:time_steps) {
+      if (h == 1) {
+        time_points <- c()
+        for (i in initially_infected) {
+          time_points[i] <- h
+        }
+      }
+      for (i in initially_infected) {
+        for (j in 1:ncol(network)) {
+          if (j == 1) {
+            in_network <- c()
+          }
+          if (network[i,j] == 1) {
+            in_network <- c(in_network, j)
+          }
+        }
+        if (is.null(in_network) == FALSE) {
+          random_in_network <- sample(in_network, 1)
+          if (sum(random_in_network == initially_infected) == 0 & runif(1) <= p) {
+            initially_infected <- c(initially_infected, random_in_network)
+            time_points[random_in_network] <- h
+          }
+        }
+      }
+    }
+    return(time_points)
+  }
+  
+  #3
+  initially_infected <- subset(attributes, adoption_date==1) %>% row.names() %>% as.numeric()
+  SI_contagion_model(network, initially_infected, .1, 18)
+  SI_contagion_model(network, initially_infected, .5, 18)
+  SI_contagion_model(network, initially_infected, .9, 18)
+  
+```
+
+```{r}
+#Part 2
+  
+  #4
+  
+    #98 and 99 are codes for missing data, not adoption time
+    for (i in 1:nrow(attributes)) {
+      if (attributes[i,"adoption_date"] == 98 | attributes[i,"adoption_date"] == 99) {
+        attributes[i,"adoption_date"] <- NA
+      }
+    }
+
+    ABC <- function(N, tolerance_level) {
+      theta_value <- c()
+      summary_statistic <- c()
+      for (i in 1:N) { 
+        p <- runif(1)
+        generated_data <- SI_contagion_model(network, initially_infected, p, 18)
+        summary_statistic[i] <- sum(abs(generated_data - attributes$adoption_date), na.rm=TRUE)
+        theta_value[i] <- p
+      }
+      proposals <- data.frame(theta_value, summary_statistic)
+      proposals <- proposals %>% arrange(summary_statistic)
+      posterior_samples <- proposals$theta_value[1:N*tolerance_level]
+      return(posterior_samples)
+    }
+    
+  #5
+    posterior_samples <- suppressWarnings(ABC(N=1000, tolerance_level=.05))
+    hist(posterior_samples, ylab="Density", xlab="Parameter Value", main="Histogram of Posterior Samples")
+    mean(posterior_samples)
+    quantile(posterior_samples, .025)
+    quantile(posterior_samples, .975)
+    
+```

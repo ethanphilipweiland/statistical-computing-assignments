@@ -1,0 +1,53 @@
+---
+title: "Weiland Homework 0"
+author: "Ethan Weiland"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+x <- rnorm(10)
+y <- rnorm(10)
+lm0 <- lm(y ~ x)
+lm0_summary <- summary(lm0)
+```
+
+1. Use the typeof function to find the types of x, y, lm0, and lm0_summary.
+
+```{r}
+typeof(x)
+typeof(y)
+typeof(lm0)
+typeof(lm0_summary)
+```
+
+2. Use the str function to look at the elements of lm0_summary. Describe some of the elements contained in that object (there are 11 total, no need to describe all of them).
+
+```{r}
+str(lm0_summary)
+```
+ 
+The "r.squared" component of the list contains one numeric element, with that one numeric element equal to 0.0471. The "fstatistic" component of the list contains three elements (the value of the f-statistic, the numerator degrees of freedom, and the denominator degrees of freedom), all of which are named. The "residuals" component of the list contains ten residuals (labeled "1" through "10") for the ten values in the regression. 
+
+3. What is the typeof lm0_summary[4]? Of lm0_summary[[4]]? What is the difference between them?
+
+```{r}
+typeof(lm0_summary[4])
+typeof(lm0_summary[[4]])
+```
+
+lm0_summary is a list. Using single brackets to subset a list will result in a sublist, hence why typeof(lm0_summary[4]) = "list". Using double brackets allows us to access the elements of a list. 
+
+4. Suppose you wanted a vector containing just the standard errors of the coefficient estimates in this model. Notice that the standard errors, along with some other information, is contained in the fourth element of lm0_summary. What is wrong with the following strategy for getting the standard errors?
+     - estimates_and_errors <- lm0_summary[4]
+     - std_errors <- estimates_and_errors[,2]
+     
+The above code produces "Error in estimates_and_errors[, 2] : incorrect number of dimensions". This is because lm0_summary is a list, not a data frame/matrix, and should be subset with double brackets instead of single brackets. 
+
+5. How would you modify the code above so that std_errors is a vector with the standard errors?
+
+```{r}
+estimates_and_errors <- lm0_summary[[4]]
+std_errors <- estimates_and_errors[,2]
+```
+

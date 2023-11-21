@@ -1,0 +1,121 @@
+---
+title: "Weiland Homework 3"
+author: "Ethan Weiland"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+## 1.)
+tornadoes <- readRDS("tornadoes.RDS")
+```
+
+```{r}
+## 2.)
+lapply(tornadoes, typeof)
+sapply(tornadoes, typeof)
+```
+
+The function lapply() takes a list (or vector), runs a specified function over the elements of the list (or vector), and returns the result stored as a list. A dataframe is a type of list, with the columns of the dataframe being the elements of this kind of list. So lapply() will run the specified function on the columns of the data frame and return a list. The same logic underlies the sapply() function, with the difference being that sapply will "simplify" the list output of lapply() into an array (if possible). 
+
+```{r}
+## 3.)
+
+library("dplyr")
+library("magrittr")
+
+mag.numeric <- sapply(tornadoes$mag, as.numeric)
+tornadoes <- cbind(tornadoes, mag.numeric)
+typeof(tornadoes$mag.numeric)
+
+tornadoes %>%
+  group_by(st) %>%
+  summarise(proportion_strong_tornadoes = sum(mag.numeric >= 3) / length(mag.numeric))
+
+```
+
+```{r}
+## 4.)
+f <- function(x) {
+  model <- lm(loss ~ mag.numeric, data=x)
+  coefficients <- coef(model)
+  return(coefficients["mag.numeric"])
+}
+
+```
+
+```{r}
+## 5.)
+by(data = tornadoes, INDICES = tornadoes$st, FUN = f)
+
+```
+
+```{r}
+## 6.)
+
+#The dataset is sorted by YYYY:MONTH:DAY, with tornadoes[35431,] corresponding to the last tornado in 1995 and tornadoes[35432,] corresponding to the first tornado in 1996
+period_of_tornado <- c(rep("Pre 1996", 35431), rep("1996 and Later", (nrow(tornadoes) - 35431)))
+tornadoes <- cbind(tornadoes, period_of_tornado)
+
+f <- function(x) {
+  recode <- function(x, inval, outval) {
+    x[x %in% inval] <- outval
+    x
+  }
+  recode(x$mag.numeric, -9, NA)
+  recode(x$loss, 0, NA)
+  model <- lm(loss ~ mag.numeric, data=x)
+  coefficients <- coef(model)
+  return(coefficients["mag.numeric"])
+}
+
+by(data = tornadoes, INDICES = tornadoes[,c("st", "period_of_tornado")], FUN = f)
+
+```
+
+```{r}
+## 7.)
+
+##Did this question mean to say tornadoes instead of hurricanes? Also did it mean merge the results from Question #5 instead of Question #6 (since Question #3 did not calculate the proportion of magnitude pre- and post-1996)?
+
+##Cleaning up results from Question #3
+proportion_strong_tornadoes <- function (x) {
+  recode <- function(x, inval, outval) {
+    x[x %in% inval] <- outval
+    x
+  }
+  recode(x$mag.numeric, -9, NA)
+  y <- sum(x$mag.numeric >= 3) / length(x$mag.numeric)
+  return(y)
+}
+question_3 <- by(data= tornadoes, INDICES=tornadoes$st, FUN=proportion_strong_tornadoes)
+for (i in 1:length(question_3)) {
+  if (i == 1) {
+    question_3_vector <- c()
+  }
+  question_3_vector[i] <- question_3[i]
+}
+names(question_3_vector) <- names(question_3)
+
+##Cleaning up results from Question #5
+question_5 <- by(data = tornadoes, INDICES = tornadoes$st, FUN = f)
+for (i in 1:length(question_5)) {
+  if (i == 1) {
+    question_5_vector <- c()
+  }
+  question_5_vector[i] <- question_5[i]
+}
+names(question_5_vector) <- names(question_5)
+
+##Merging results from Question #3 and Question #5 into a new dataframe
+question_7_df <- data.frame(question_3_vector)
+question_7_df <- cbind(question_7_df, question_5_vector)
+names(question_7_df) <- c("Proportion Strong Tornadoes", "Coefficient for Loss vs. Magnitude")
+
+##Calculating correlation
+cor(question_7_df$`Proportion Strong Tornadoes`, question_7_df$`Coefficient for Loss vs. Magnitude`, use="complete.obs")
+```

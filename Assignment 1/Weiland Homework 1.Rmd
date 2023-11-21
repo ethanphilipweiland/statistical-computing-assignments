@@ -1,0 +1,97 @@
+---
+title: "Weiland Homework 1"
+author: "Ethan Weiland"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# 1.)
+list.files("books")
+```
+
+```{r}
+# 2.)
+title <- rep(NA, 21)
+n_words <- rep(NA, 21)
+n_chars <- rep(NA, 21)
+n_individuals <- rep(NA, 21)
+dickens_novels <- data.frame(title, n_words, n_chars, n_individuals)
+```
+
+```{r}
+# 3.)
+
+library("readr")
+
+n_chars <- c()
+for (i in list.files("books")) {
+  txt_file <- paste("books/", noquote(i), sep="")
+  b <- read_file(txt_file)
+  n_chars[i] <- nchar(b)
+}
+dickens_novels$n_chars <- n_chars
+
+n_words <- c()
+for (i in list.files("books")) {
+  txt_file <- paste("books/", noquote(i), sep="")
+  b <- read_file(txt_file)
+  n_words[i] <- lengths(gregexpr("\\w+", b))
+}
+dickens_novels$n_words <- n_words
+
+title <- c()
+for (i in list.files("books")) {
+  txt_file <- paste("books/", noquote(i), sep="")
+  b <- read_file(txt_file)
+  x <- regmatches(b, regexpr("Title:.+Author:", b))
+  y <- strsplit(x, " (\n)*Author:")
+  z <- strsplit(y[[1]][1], "Title: ")
+  title[i] <- z[[1]][2]
+}
+dickens_novels$title <- title
+
+```
+
+```{r}
+# 4.)
+
+#Regular expression = (((M|D)r?s?\\.)|Miss) ([A-Z]\\. )*([A-Z]([a-z]+) )+
+
+n_individuals <- c()
+for (i in list.files("books")) {
+  txt_file <- paste("books/", noquote(i), sep="")
+  b <- read_file(txt_file)
+  x <- regmatches(b, gregexpr("(((M|D)r?s?\\.)|Miss) ([A-Z]\\. )*([A-Z]([a-z]+) )+", b))
+  y <- unique(x[[1]])
+  n_individuals[i] <- length(y)
+}
+dickens_novels$n_individuals <- n_individuals
+
+```
+
+```{r}
+# 5.)
+print(dickens_novels)
+```
+
+```{r}
+# 6.)
+for (i in list.files("books")) {
+  txt_file <- paste("books/", noquote(i), sep="")
+  b <- read_file(txt_file)
+  x <- regmatches(b, regexpr("Title:.+Author:", b))
+  y <- strsplit(x, " (\n)*Author:")
+  z <- strsplit(y[[1]][1], "Title: ")
+  print(z[[1]][2])
+  x <- regmatches(b, gregexpr("(((M|D)r?s?\\.)|Miss) ([A-Z]\\. )*([A-Z]([a-z]+) )+", b))
+  y <- unique(x[[1]])
+  print(y)
+}
+```
